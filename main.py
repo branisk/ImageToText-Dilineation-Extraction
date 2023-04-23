@@ -4,20 +4,18 @@ from typing import List
 
 import dash
 import dash_bootstrap_components as dbc
-import dash_core_components as dcc
-import dash_html_components as html
+from dash import html, dcc, dash_table
 from dash.dependencies import Input, Output, State
-from dash_table import DataTable
-import pandas as pd
-
 from google.cloud import vision
 import io
 import openai
+import pandas as pd
 
 openai.api_key = 'your-api-key'
 
-# Dummy function for text extraction
-def extract_text(image):
+
+#  Google cloud vision OCR to extract text
+def extract_text(image: bytes) -> str:
     client = vision.ImageAnnotatorClient()
     image = vision.Image(content=image)
 
@@ -25,11 +23,14 @@ def extract_text(image):
     texts = response.text_annotations
 
     if texts:
-        return texts[0].description  # Return the first text annotation (entire text)
+        return texts[0].description
     else:
         return "No text found"
 
-def extract_text_between_symbols(text, symbol1, symbol2):
+
+#  Input takes a string of text, and a start symbol1, and stop symbol2
+#  Returns the sequence of text between symbol1 and symbol2
+def extract_text_between_symbols(text: str, symbol1: str, symbol2: str) -> str:
     start_index = text.find(symbol1)
     if start_index == -1:
         return ""
@@ -38,19 +39,27 @@ def extract_text_between_symbols(text, symbol1, symbol2):
         return ""
     return text[start_index + 1:end_index]
 
-def extract_categories(text):
-    chat_role = "Your sole purpose is to compile information and summarize it.  You will only output data in a csv format, and no other text will be returned by you."
+
+#  ChatGPT implementation of feature extraction to categorize a string of text
+def extract_categories(text:str) -> str:
+    chat_role = "Your sole purpose is to compile information and summarize it. \
+        Only output data in a csv format, and no other text will be returned"
 
     response = openai.ChatCompletion.create(
         model="gpt-3.5-turbo",
         messages=[
             {"role": "system", "content": chat_role},
-            {"role": "user", "content": "Give me a relevant number of categories that summarize this text, and would be useful to relate this text to similar texts.  Do not return anything else besides the categorizations of this text separated into commas."},
+            {"role": "user", "content": "Give me a relevant number of \
+                categories that summarize this text, and would be useful to \
+                relate this text to similar texts.  Do not return anything else \
+                 besides the categorizations of this text separated into commas."
+            },
             {"role": "user", "content": text},
         ],
     )
 
     return response.choices[0].message.content
+
 
 app = dash.Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP])
 
@@ -72,12 +81,12 @@ app.layout = dbc.Container([
         multiple=True
     ),
     dbc.Row([
-        dbc.Col(dcc.Input(id="symbol1", type="text", placeholder="Enter first symbol")),
-        dbc.Col(dcc.Input(id="symbol2", type="text", placeholder="Enter second symbol")),
+        dbc.Col(dcc.Input(id="symbol1", type="text", placeholder="Enter start symbol")),
+        dbc.Col(dcc.Input(id="symbol2", type="text", placeholder="Enter end symbol")),
     ]),
     html.Button('Extract Text from Images', id='extract-text-button'),
     html.Div(id='output-data-upload'),
-    DataTable(
+    dash_table.DataTable(
         id='datatable',
         style_table={
             'width': '600px',
@@ -88,7 +97,6 @@ app.layout = dbc.Container([
             'overflow': 'hidden',
             'textOverflow': 'ellipsis'
         },
-        # specify columns to apply width style to
         style_data_conditional=[
             {
                 'if': {'column_id': c},
@@ -106,6 +114,7 @@ app.layout = dbc.Container([
     )
 ])
 
+
 @app.callback(
     Output('output-data-upload', 'children'),
     Output('datatable', 'data'),
@@ -118,6 +127,7 @@ def update_output(n_clicks, images_contents, symbol1, symbol2):
     if n_clicks is None or images_contents is None:
         return [], [], []
 
+    unaltered_texts = []
     extracted_texts = []
     extracted_categories = []
 
@@ -126,17 +136,23 @@ def update_output(n_clicks, images_contents, symbol1, symbol2):
 
         image = base64.b64decode(content_string)
 
-        extracted_text = extract_text(image)
+        unaltered_text = extract_text(image)
+
+        unaltered_texts.append(unaltered_text)
 
         if symbol1 is not None and symbol2 is not None:
-            extracted_text = extract_text_between_symbols(extracted_text, symbol1, symbol2)
+            extracted_text = extract_text_between_symbols(unaltered_text, symbol1, symbol2)
 
         extracted_texts.append(extracted_text)
 
         extracted_category = extract_categories(extracted_text)
         extracted_categories.append(extracted_category)
 
-    data = pd.DataFrame({'Extracted Text': extracted_texts, 'Extracted Categories': extracted_categories})
+    data = pd.DataFrame({
+        'Unaltered_Text': unaltered_texts,
+        'Extracted Text': extracted_texts,
+        'Extracted Categories': extracted_categories
+    })
 
     return html.Div([
             html.H5(f"{len(images_contents)} Image(s) Uploaded"),
@@ -157,6 +173,5 @@ def update_download_button(data):
     return csv_data_uri
 
 
-
 if __name__ == '__main__':
-    app.run_server(debug=True)
+    app.run_server(debug=True, port='8000')
