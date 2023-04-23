@@ -1,4 +1,4 @@
-# Image Text Extraction Dashboard
+# NoteGPT: Image Text Extraction Dashboard
 
 This program is a note-taking tool designed to extract text from images, select a desired portion of the text, and produce a CSV with the extracted portion and a categorical summarization of the text. This tool is particularly useful for digitizing handwritten notes and organizing them using platforms such as Obsidian.
 
