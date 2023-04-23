@@ -2,6 +2,8 @@
 
 This program is a note-taking tool designed to extract text from images, select a desired portion of the text, and produce a CSV with the extracted portion and a categorical summarization of the text. This tool is particularly useful for digitizing handwritten notes and organizing them using platforms such as Obsidian.
 
+This tool was made to show the capabilities of combing pre-trained models available through different providers (Google and OpenAI), and expand the possible use cases.  You can easily create your own interactive dashboard and automate tedious processes such as uploading a ton of images.  Potential upgrades are detecting highlighted words, separating handwritten and printed notes, detecting underlined or bold words, and much more.
+
 ## Features
 
 - Extract text from images using Google Cloud Vision API
@@ -26,7 +28,6 @@ This program is a note-taking tool designed to extract text from images, select 
 1. Install the required Python packages:
 
 ```
-bash
 pip install google-cloud-vision openai dash dash-bootstrap-components pandas
 ```
 
@@ -35,7 +36,6 @@ pip install google-cloud-vision openai dash dash-bootstrap-components pandas
 3. Run the application:
 
 ```
-bash
 python app.py
 ```
 
