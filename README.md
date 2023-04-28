@@ -4,6 +4,8 @@ This program is a note-taking tool designed to extract text from images, select 
 
 This tool was made to show the capabilities of combing pre-trained models available through different providers (Google and OpenAI), and expand the possible use cases.  You can easily create your own interactive dashboard and automate tedious processes such as uploading a ton of images.  Potential upgrades are detecting highlighted words, separating handwritten and printed notes, detecting underlined or bold words, and much more.
 
+![image](https://user-images.githubusercontent.com/56201891/235242399-e7dd87af-717b-4897-a0fa-992acb98fecc.png)
+
 ## Features
 
 - Extract text from images using Google Cloud Vision API
