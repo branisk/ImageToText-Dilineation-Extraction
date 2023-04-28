@@ -64,56 +64,66 @@ def extract_categories(text:str) -> str:
 app = dash.Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP])
 
 app.layout = dbc.Container([
-    html.H1("Image Text Extraction Dashboard"),
-    dcc.Upload(
-        id='upload-images',
-        children=html.Div(['Drag and Drop or ', html.A('Select Images')]),
-        style={
-            'width': '100%',
-            'height': '60px',
-            'lineHeight': '60px',
-            'borderWidth': '1px',
-            'borderStyle': 'dashed',
-            'borderRadius': '5px',
-            'textAlign': 'center',
-            'margin': '10px'
-        },
-        multiple=True
-    ),
-    dbc.Row([
-        dbc.Col(dcc.Input(id="symbol1", type="text", placeholder="Enter start symbol")),
-        dbc.Col(dcc.Input(id="symbol2", type="text", placeholder="Enter end symbol")),
-    ]),
-    html.Button('Extract Text from Images', id='extract-text-button'),
-    html.Div(id='output-data-upload'),
-    dash_table.DataTable(
-        id='datatable',
-        style_table={
-            'width': '600px',
-            'overflowX': 'auto'
-        },
-        style_cell={
-            'maxWidth': '200px',
-            'overflow': 'hidden',
-            'textOverflow': 'ellipsis'
-        },
-        style_data_conditional=[
-            {
-                'if': {'column_id': c},
-                'width': '75px'
-            } for c in ['column1', 'column2', 'column3']
-        ],
-    ),
-    html.A(
-        "Download CSV",
-        id="download-button",
-        download="extracted_texts.csv",
-        href="",
-        target="_blank",
-        style={"margin-top": "20px"},
-    )
-])
-
+    dbc.Container([
+        html.H1("Image Text Extraction Dashboard"),
+        dcc.Upload(
+            id='upload-images',
+            children=html.Div(['Drag and Drop or ', html.A('Select Images')]),
+            style={
+                'width': '100%',
+                'height': '60px',
+                'lineHeight': '60px',
+                'borderWidth': '1px',
+                'borderStyle': 'dashed',
+                'borderRadius': '5px',
+                'textAlign': 'center',
+                'margin': '10px'
+            },
+            multiple=True
+        ),
+        dbc.Row([
+            dbc.Col(dcc.Input(id="symbol1", type="text", placeholder="Enter start symbol", value='[')),
+            dbc.Col(dcc.Input(id="symbol2", type="text", placeholder="Enter end symbol", value=']')),
+        ]),
+        html.Button('Extract Text from Images', id='extract-text-button'),
+        html.Div(id='output-data-upload'),
+        dash_table.DataTable(
+            id='datatable',
+            style_table={
+                'width': '100%',
+                'margin-left': 'auto',
+                'margin-right': 'auto'
+            },
+            style_cell={
+                'maxWidth': '250px',
+                'textOverflow': 'ellipsis',
+                'whiteSpace': 'normal',
+                'textAlign': 'center'
+            },
+            style_data_conditional=[
+                {
+                    'if': {'column_id': c},
+                    'width': '100px',
+                    'height': '100px'
+                } for c in ['Unaltered_Text', 'Extracted Text', 'Extracted Categories']
+            ] + \
+            [
+                {
+                    'if': {'column_id': cd},
+                    'width': '100px',
+                    'height': '100px'
+                } for cd in ['Index']
+            ],
+        ),
+        html.A(
+            "Download CSV",
+            id="download-button",
+            download="extracted_texts.csv",
+            href="",
+            target="_blank",
+            style={"margin-top": "20px"},
+        )], fluid=True, style={'textAlign': 'center', 'maxWidth': '80%'})
+    ])
 
 @app.callback(
     Output('output-data-upload', 'children'),
@@ -148,14 +158,19 @@ def update_output(n_clicks, images_contents, symbol1, symbol2):
         extracted_category = extract_categories(extracted_text)
         extracted_categories.append(extracted_category)
 
+    limit = 400
+    text_len = len(unaltered_texts[0])
+
     data = pd.DataFrame({
-        'Unaltered_Text': unaltered_texts,
+        'Index': [i for i in range(0, len(unaltered_texts))],
+        'Unaltered_Text': unaltered_texts[0][:min(text_len, limit)],
         'Extracted Text': extracted_texts,
         'Extracted Categories': extracted_categories
     })
 
     return html.Div([
             html.H5(f"{len(images_contents)} Image(s) Uploaded"),
+            html.Div([html.Img(src=content, style={'width': '100px', 'height': '100px', 'margin': '10px'}) for content in images_contents], style={'display': 'flex', 'flexWrap': 'wrap', 'justifyContent': 'center'})
         ], style={'margin-top': '20px'}), data.to_dict('records'), [{"name": i, "id": i} for i in data.columns]
 
 
